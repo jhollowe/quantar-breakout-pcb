@@ -1,0 +1,28 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/alpine
+{
+	"name": "Quantar Breakout Board Dev",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/devcontainers/base:alpine3.23",
+	"features": {
+		"ghcr.io/devcontainers/features/nix:1": {
+			"multiUser": true,
+			"version": "latest",
+			"packages": "nixd,nixfmt",
+			"extraNixConfig": "experimental-features = nix-command flakes",
+		}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"jnoortheen.nix-ide",
+				"mhutchie.git-graph",
+			],
+			"settings": {
+				"nix.enableLanguageServer": true,
+			}
+		}
+	},
+	// The first time the dev container runs, install the flake's packages
+	"postCreateCommand": "nix profile add .",
+}
