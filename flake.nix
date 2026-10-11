@@ -20,6 +20,21 @@
         name = "homelab-apps-devshell";
         paths = [
           pkgs.kicad
+
+          #
+          pkgs.libX11
+          pkgs.libXext
+          pkgs.libXrender
+          pkgs.libXi
+          pkgs.libXrandr
+          pkgs.libXcursor
+          pkgs.libXfixes
+          pkgs.libXdamage
+          pkgs.libXcomposite
+          pkgs.mesa
+          pkgs.glib
+          pkgs.gtk3
+          pkgs.adwaita-icon-theme
         ];
       };
 

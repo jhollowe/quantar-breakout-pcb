@@ -23,6 +23,17 @@
 			}
 		}
 	},
+	// Enable X11 forwarding for GUI apps like KiCad
+	"containerEnv": {
+		"DISPLAY": "${localEnv:DISPLAY}"
+	},
+	"runArgs": [
+		"--net=host",
+		"-v",
+		"/tmp/.X11-unix:/tmp/.X11-unix:rw",
+		"-v",
+		"${localEnv:HOME}/.Xauthority:/home/vscode/.Xauthority:rw"
+	],
 	// The first time the dev container runs, install the flake's packages
 	"postCreateCommand": "nix profile add .",
 }
