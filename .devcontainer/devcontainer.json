@@ -23,17 +23,27 @@
 			}
 		}
 	},
-	// Enable X11 forwarding for GUI apps like KiCad
-	"containerEnv": {
-		"DISPLAY": "${localEnv:DISPLAY}"
-	},
-	"runArgs": [
-		"--net=host",
-		"-v",
-		"/tmp/.X11-unix:/tmp/.X11-unix:rw",
-		"-v",
-		"${localEnv:HOME}/.Xauthority:/home/vscode/.Xauthority:rw"
+	// Forward ports for noVNC (web VNC client) and VNC server
+	"forwardPorts": [
+		6080,
+		5900
 	],
+	"portsAttributes": {
+		"6080": {
+			"label": "noVNC - KiCad in Browser",
+			"onAutoForward": "notify"
+		},
+		"5900": {
+			"label": "VNC Server",
+			"onAutoForward": "ignore"
+		}
+	},
 	// The first time the dev container runs, install the flake's packages
 	"postCreateCommand": "nix profile add .",
+	// Start VNC server on container start
+	"postStartCommand": "start-vnc",
+	// Add scripts to PATH
+	"remoteEnv": {
+		"PATH": "${containerEnv:PATH}:/workspaces/quantar-breakout-pcb/.devcontainer/scripts"
+	},
 }

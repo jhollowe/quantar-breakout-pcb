@@ -20,21 +20,17 @@
         name = "homelab-apps-devshell";
         paths = [
           pkgs.kicad
-
-          #
-          pkgs.libX11
-          pkgs.libXext
-          pkgs.libXrender
-          pkgs.libXi
-          pkgs.libXrandr
-          pkgs.libXcursor
-          pkgs.libXfixes
-          pkgs.libXdamage
-          pkgs.libXcomposite
+          pkgs.tigervnc
+          pkgs.novnc
+          pkgs.websockify
+          pkgs.openbox
+          pkgs.xterm
           pkgs.mesa
           pkgs.glib
           pkgs.gtk3
           pkgs.adwaita-icon-theme
+          pkgs.fontconfig
+          pkgs.dejavu_fonts
         ];
       };
 
@@ -42,7 +38,13 @@
         packages = self.packages.${system}.default;
         shellHook = ''
           echo "quantar breakout board dev shell loaded"
+          echo ""
+          echo "To start KiCad in browser:"
+          echo "  1. Run: start-vnc"
+          echo "  2. Open browser to: http://localhost:6080/vnc.html"
+          echo "  3. In terminal, run: kicad"
         '';
+        PATH = [ ./devcontainer/scripts ];
       };
     };
 }
