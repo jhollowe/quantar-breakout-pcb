@@ -12,5 +12,5 @@
 | 10      | IN9 - PTT       | INPUT 9                               | KEY FROM WL     | DEKEY FROM WL |                                                                                                                 |
 | 11      | OUT1 - STN ALRM | STN ALARM<br>OR<br>TX INHIBITED       | SET OUTPUT 1    | CLR OUTPUT 1  | A signal that the repeater is in some way non-functional<br>The Station Alarm is the OR of all the other alarms |
 | 12      | OUT2            | LINE PTT                              | SET OUTPUT 2    | CLR OUTPUT 2  | TESTING                                                                                                         |
-| 13      | OUT3 - PL DETCT | RX PL DETECT                          | SET OUTPUT 3    | CLR OUTPUT 3  | Output if squelch is broken (carrier is detected)                                                               |
-| 14      | OUT7 - COS/COR  | RX CAR DETECT                         | SET OUTPUT 7    | CLR OUTPUT 7  | Output if PL is detected                                                                                        |
+| 13      | OUT3 - PL DETCT | RX PL DETECT                          | SET OUTPUT 3    | CLR OUTPUT 3  | Output if PL is detected                                                                                        |
+| 14      | OUT7 - COS/COR  | RX CAR DETECT                         | SET OUTPUT 7    | CLR OUTPUT 7  | Output if squelch is broken (carrier is detected)                                                               |
