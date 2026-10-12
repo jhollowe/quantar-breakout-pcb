@@ -1,3 +1,2 @@
-- decide on level shifting: TXS0108E (bidirectional), TXB0108 (directional), 74LVC245 (5V→3.3V), or discrete MOSFETs
 - decide if Pi needs potentiometer for RX/TX audio gain/attenuation (controller has internal adjustment)
 - decide later if we need separate audio and digital ground planes

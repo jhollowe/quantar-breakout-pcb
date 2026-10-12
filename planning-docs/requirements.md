@@ -171,26 +171,44 @@ These are requirements for how the final circuit board needs to act.
 
 ## Signal Type Summary & Level Shifting Requirements
 
-| Signal                                  | Quantar Side                     | Pi/Controller Side              | Level Shifting Required                          |
-| --------------------------------------- | -------------------------------- | ------------------------------- | ------------------------------------------------ |
-| **Transistor Inputs (In 1-6)**          | 5V logic (Aux In 1-6)            | 3.3V GPIO (Pi)                  | **YES** - 5V → 3.3V (TXS0108E or similar)        |
-| **Transistor Input (In 7 - PL Enable)** | 5V logic (Aux In 7)              | 3.3V GPIO (Pi + Controller)     | **YES** - 5V → 3.3V                              |
-| **Opto-coupled Input (PTT/In 9)**       | Opto-isolated (5V, pins 22/47)   | 3.3V GPIO (Pi + Controller)     | **YES** - Opto output → 3.3V (buffer)            |
-| **Transistor Outputs (Out 1-3)**        | 5V open collector (Aux Out 1-3)  | 3.3V GPIO (Pi)                  | **YES** - 5V OC → 3.3V (pullup + level shift)    |
-| **Relay Output (Out 7 / COS)**          | Relay contact (pins 18/43)       | 3.3V GPIO (Pi + Controller)     | **YES** - Relay → 3.3V (pullup + buffer)         |
-| **Line 1 Audio (Balanced)**             | 600Ω balanced, phone line levels | Controller (TX Audio)           | **YES** - Balanced → unbalanced, impedance match |
-| **Aux TX Audio**                        | 470Ω unbalanced, ±4.1V           | Controller (TX Audio) / Pi      | **YES** - Level adjust, AC couple                |
-| **Aux PL Audio**                        | 470Ω unbalanced, ±4.1V           | Controller (CTCSS Out)          | **YES** - Level adjust, AC couple                |
-| **Aux RX Audio**                        | <5Ω unbalanced, 0-6.6Vpp         | Controller (RX Audio) / Pi      | **YES** - Attenuate to line level, AC couple     |
-| **Door Sensor**                         | N.O. contact                     | 3.3V GPIO (Pi) with 2.2k pullup | **NO** - Direct (already 3.3V)                   |
-| **DHT12 Sensor**                        | 3.3V I2C                         | 3.3V GPIO (Pi)                  | **NO** - Direct (already 3.3V)                   |
+| Signal                                    | Quantar Side                     | Pi/Controller Side              | Level Shifting Required                      | Solution                                                    |
+| ----------------------------------------- | -------------------------------- | ------------------------------- | -------------------------------------------- | ----------------------------------------------------------- |
+| **Transistor Inputs (In 1-6)**            | 5V logic (Aux In 1-6)            | 3.3V GPIO (Pi)                  | **YES** - 3.3V → 5V                          | 74LVC245 / 74AHCT245 (unidirectional buffer)                |
+| **Transistor Input (In 7 - PL Enable)**   | 5V logic (Aux In 7)              | 3.3V GPIO (Pi + Controller)     | **YES** - 3.3V → 5V (shared)                 | **2N7002 MOSFET** (open-drain, wired-OR with Controller)    |
+| **Opto-coupled Input (PTT/In 9)**         | Opto-isolated (5V, pins 22/47)   | 3.3V GPIO (Pi + Controller)     | **YES** - 3.3V → 5V (shared)                 | **2N7002 MOSFET** (open-drain, wired-OR with Controller)    |
+| **Transistor Outputs (Out 1-2)**          | 5V open collector (Aux Out 1-2)  | 3.3V GPIO (Pi)                  | **YES** - 5V → 3.3V                          | 74LVC245 / 74AVC245 (unidirectional buffer)                 |
+| **Transistor Output (Out 3 - PL Detect)** | 5V open collector (Aux Out 3)    | 3.3V GPIO (Pi + Controller)     | **YES** - 5V → 3.3V (shared)                 | **4.7kΩ pull-up to 3.3V** (passive, shared with Controller) |
+| **Relay Output (Out 7 / COS)**            | Relay contact (pins 18/43)       | 3.3V GPIO (Pi + Controller)     | **YES** - Relay → 3.3V (shared)              | **4.7kΩ pull-up to 3.3V** (passive, shared with Controller) |
+| **Line 1 Audio (Balanced)**               | 600Ω balanced, phone line levels | Controller (TX Audio)           | **NO** - Direct connection                   | Controller has internal adjustment                          |
+| **Aux TX Audio**                          | 470Ω unbalanced, ±4.1V           | Controller (TX Audio) / Pi      | **YES** - Level adjust, AC couple            | Voltage divider / potentiometer for Pi                      |
+| **Aux PL Audio**                          | 470Ω unbalanced, ±4.1V           | Controller (CTCSS Out)          | **YES** - Level adjust, AC couple            | Voltage divider / potentiometer for Pi                      |
+| **Aux RX Audio**                          | <5Ω unbalanced, 0-6.6Vpp         | Controller (RX Audio) / Pi      | **YES** - Attenuate to line level, AC couple | Voltage divider / potentiometer for Pi                      |
+| **Door Sensor**                           | N.O. contact                     | 3.3V GPIO (Pi) with 2.2k pullup | **NO** - Direct (already 3.3V)               | Direct                                                      |
+| **DHT12 Sensor**                          | 3.3V I2C                         | 3.3V GPIO (Pi)                  | **NO** - Direct (already 3.3V)               | Direct                                                      |
 
-## Level Shifting Strategy
-- **Preferred**: Dedicated level shifter ICs (TXS0108E for bidirectional, TXB0108 for directional, 74LVC245 for 5V→3.3V)
-- **Fallback**: Discrete MOSFET circuits (2N7002 + pullups) for simple unidirectional signals
-- **Audio**: Transformer coupling for balanced/unbalanced conversion, op-amp buffers for level adjustment
-- **Opto-coupled inputs**: Buffer the optocoupler output to 3.3V logic
-- **Relay outputs**: Pullup to 3.3V + buffer to GPIO
+## Level Shifting Strategy (DECIDED)
+
+### Digital Signals - No Bidirectional Level Shifters
+**Bidirectional level shifters (TXS0108E) are NOT used** on shared lines because they would cause contention with the controller. The Quantar's transistor-buffered inputs have 10kΩ pull-ups to 5V and expect open-collector/open-drain drivers.
+
+| Channel Group                 | Count | Direction             | Solution                               | Components                                           |
+| ----------------------------- | ----- | --------------------- | -------------------------------------- | ---------------------------------------------------- |
+| Pi → Quantar (Aux In 1-6)     | 6     | 3.3V → 5V             | Unidirectional buffer                  | 1× 74LVC245 / 74AHCT245 (8-ch, OE pin)               |
+| Pi → Quantar (PTT, PL Enable) | 2     | 3.3V → 5V (shared)    | **Discrete 2N7002 MOSFETs** (wired-OR) | 2× 2N7002 (SOT-23) + Quantar's internal 10kΩ pull-up |
+| Quantar → Pi (Aux Out 1-2)    | 2     | 5V → 3.3V             | Unidirectional buffer                  | 1× 74LVC245 / 74AVC245 (8-ch, OE pin)                |
+| Quantar → Pi (PL Detect, COS) | 2     | 5V OC → 3.3V (shared) | **Passive pull-up to 3.3V**            | 4× 4.7kΩ resistors (2 per line for Pi + Controller)  |
+
+### Key Design Decisions
+1. **No TXS0108E/TXB0108** - Bidirectional auto-direction sensing conflicts with controller driving shared lines
+2. **2N7002 MOSFETs for shared inputs** - Allow both Pi and Controller to pull Quantar inputs LOW independently (wired-OR), Quantar's internal 10kΩ pull-up provides HIGH
+3. **Passive pull-ups for shared outputs** - Quantar outputs are open-collector; 4.7kΩ to 3.3V lets both Pi and Controller read safely
+4. **74LVC245 for Pi-only lines** - Simple, cheap, 8 channels per IC, OE pin for enable/disable
+5. **Level shifters powered from Pi's 5V** (VCCA=3.3V from Pi, VCCB=5V from Pi)
+
+### Audio Signals
+- **Line 1/2 (Balanced)**: Direct connection to Controller DB-9 (no transformer, controller has internal adjustment)
+- **Aux TX/PL/RX Audio**: AC-coupled voltage dividers with optional potentiometers for Pi level adjustment
+- **Pi USB Sound Interface**: 3.5mm TRRS direct connection (standard headset levels)
 
 ## Connector Requirements
 
@@ -272,12 +290,12 @@ See `planning-docs/minimal-wildcard-config.md` for complete table definitions.
 | Input        | 10          | 5V                           | Shared                  | 5V              | 8           | 5V DC Out     | green/red     |
 | Input        | 11          | RX Audio                     | Controller DB9          | 5               | 30          | Aux RX Audio  | white/slate   |
 | Input        | 12          | TX Audio                     | Controller DB9          | 4               | 5           | Aux TX Audio  | slate/white   |
-| Input        | 13          | PTT                          | Controller DB9:3, Pi:11 | 47              | Aux In 9 -  | violet/orange |
-| Input        | 14          | Ctrlr PL Out                 | Controller DB9:1, Pi:8  | 17              | Aux In 7    | orange/yellow |
-| Input        | 15          | COS                          | Controller DB9:7, Pi:7  | 43              | Aux Out 7 - | yellow/green  |
-| Input        | 16          | Ctrlr PL In                  | Controller DB9:2, Pi:5  | 38              | Aux Out 3   | black/green   |
-| Input        | 17          | Ctrlr TX Audio               | Controller DB9:4        | 1               | Line 1 +    | blue/white    |
-| Input        | 18          | Ctrlr RX Audio               | Controller DB9:5        | 2               | Line 2 +    | orange/white  |
+| Input        | 13          | PTT                          | Controller DB9:3, Pi:11 | 47              | Aux In 9 -  | violet/orange |               |
+| Input        | 14          | Ctrlr PL Out                 | Controller DB9:1, Pi:8  | 17              | Aux In 7    | orange/yellow |               |
+| Input        | 15          | COS                          | Controller DB9:7, Pi:7  | 43              | Aux Out 7 - | yellow/green  |               |
+| Input        | 16          | Ctrlr PL In                  | Controller DB9:2, Pi:5  | 38              | Aux Out 3   | black/green   |               |
+| Input        | 17          | Ctrlr TX Audio               | Controller DB9:4        | 1               | Line 1 +    | blue/white    |               |
+| Input        | 18          | Ctrlr RX Audio               | Controller DB9:5        | 2               | Line 2 +    | orange/white  |               |
 | Input        | 19          | 5V                           |                         |                 | 18          | Aux Out 7 +   | green/yellow  |
 | Input        | 20          | 5V                           |                         |                 | 22          | Aux In 9 +    | orange/violet |
 | Door Sensor  | Top         | GND                          | Shared                  | GND             |             |               |               |
