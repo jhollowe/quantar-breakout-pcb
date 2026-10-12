@@ -169,11 +169,11 @@ These are requirements for how the final circuit board needs to act.
   - GPIO 5 (Pin 29): PL Detect Input (Quantar → Pi, shared with controller)
   - GPIO 4 (Pin 7): **PTT Monitor Input** (Quantar PTT line → Pi, 5V→3.3V level shifted)
   - GPIO 12 (Pin 32): **PL Enable Monitor Input** (Quantar PL Enable line → Pi, 5V→3.3V level shifted)
-  - GPIO 13 (Pin 33): Door sensor (with 2.2k pullup to 3.3V)
+  - GPIO 13 (Pin 33): **Door Sensor Input** (5V→3.3V level shifted via 74LVC8T245)
   - GPIO 6 (Pin 31): DHT11 Data (single-wire protocol)
 - **Functions**:
   - Can assert TX Inhibit if there is an issue and repeater needs to be disabled
-  - Reads door sensor (normally-open, with 2.2k pullup to 3.3V)
+  - Reads door sensor (normally-open, with 4.7k pullup to 5V, level-shifted to 3.3V)
   - Reads DHT11 temperature/humidity sensor (3.3V VCC, GND, Data)
   - Occasionally asserts PTT and sends TX audio for announcements
   - **Monitors controller PTT and PL Enable activity** via dedicated GPIO inputs
@@ -192,7 +192,7 @@ These are requirements for how the final circuit board needs to act.
 | **Aux TX Audio**                          | 470Ω unbalanced, ±4.1V           | Controller (TX Audio) / Pi      | **YES** - Level adjust, AC couple            | Voltage divider + potentiometer for Pi                      |
 | **Aux PL Audio**                          | 470Ω unbalanced, ±4.1V           | Controller (CTCSS Out)          | **YES** - Level adjust, AC couple            | Voltage divider + potentiometer for Pi                      |
 | **Aux RX Audio**                          | <5Ω unbalanced, 0-6.6Vpp         | Controller (RX Audio) / Pi      | **YES** - Attenuate to line level, AC couple | Voltage divider + potentiometer for Pi                      |
-| **Door Sensor**                           | N.O. contact                     | 3.3V GPIO (Pi) with 2.2k pullup | **NO** - Direct (already 3.3V)               | Direct                                                      |
+| **Door Sensor**                           | N.O. contact                     | 3.3V GPIO (Pi)                  | **YES** - 5V → 3.3V                          | **74LVC8T245** (spare channel, 5V→3.3V, 4.7k pullup to 5V) |
 | **DHT11 Sensor**                          | 3.3V single-wire                 | 3.3V GPIO (Pi)                  | **NO** - Direct (already 3.3V)               | Direct (with 4.7kΩ pull-up on data line)                    |
 | **PTT Monitor**                           | Opto-coupled (Pin 47)            | 3.3V GPIO (Pi)                  | **YES** - 5V → 3.3V                          | **74LVC8T245** (spare channel, 5V→3.3V) — **passive tap, no wildcard change** |
 | **PL Enable Monitor**                     | Transistor-buffered (Pin 17)     | 3.3V GPIO (Pi)                  | **YES** - 5V → 3.3V                          | **74LVC8T245** (spare channel, 5V→3.3V) — **passive tap, no wildcard change** |
@@ -211,6 +211,7 @@ These are requirements for how the final circuit board needs to act.
 | Quantar → Pi (PL Detect, COS) | 2     | 5V OC → 3.3V (shared) | **Passive pull-up to 3.3V**            | 4× 4.7kΩ resistors (2 per line for Pi + Controller)  |
 | Quantar → Pi (PTT Monitor)    | 1     | 5V → 3.3V             | **Dual-supply unidirectional buffer**  | Spare channel on 2nd 74LVC8T245 — **passive tap**    |
 | Quantar → Pi (PL Enable Mon)  | 1     | 5V → 3.3V             | **Dual-supply unidirectional buffer**  | Spare channel on 2nd 74LVC8T245 — **passive tap**    |
+| Door Sensor (5V → Pi)         | 1     | 5V → 3.3V             | **Dual-supply unidirectional buffer**  | Spare channel on 2nd 74LVC8T245 (4.7kΩ pullup to 5V) |
 
 ### PTT Implementation (Quantar Aux In 9 - Opto-Coupled Differential)
 **Quantar PTT (Pins 22/47) is an opto-isolated differential input**, not a transistor-buffered input:
@@ -335,7 +336,7 @@ See `planning-docs/minimal-wildcard-config.md` for complete table definitions.
 | Input        | 19          | 5V                           |                         |                 | 18          | Aux Out 7 +   | green/yellow  |
 | Input        | 20          | 5V                           |                         |                 | 22          | Aux In 9 +    | orange/violet |
 | Door Sensor  | Top         | GND                          | Shared                  | GND             |             |               |               |
-| Door Sensor  | Bottom      | Signal (2.2k pullup to 3.3V) | Pi                      | 13              |             |               |               |
+| Door Sensor  | Bottom      | Signal (4.7k pullup to 5V)   | Pi (via 74LVC8T245)     | 13              |             |               | Level shifted 5V→3.3V |
 | Temp Sensor  | Left        | GND                          | Shared                  | GND             |             |               |               |
 | Temp Sensor  | Middle      | VCC (3.3V)                   | Shared                  | 3.3V            |             |               |               |
 | Temp Sensor  | Right       | Data                         | Pi                      | 6               |             |               | DHT11         |

@@ -23,7 +23,7 @@
 | Input          | 21          | PTT Monitor             | Pi                 | 7               |                     |                  | 47          | Aux In 9 -   | (monitor tap)       |
 | Input          | 22          | PL Enable Monitor       | Pi                 | 32              |                     |                  | 17          | Aux In 7     | (monitor tap)       |
 | door sensor    | top         | GND                     | Shared             | GND             |                     |                  |             |              |                     |
-| door sensor    | bottom      | has 2.2k pullup to 3.3v | Pi                 | 13              |                     |                  |             |              |                     |
+| door sensor    | bottom      | has 4.7k pullup to 5V   | Pi (via 74LVC8T245) | 13              |                     |                  |             |              | Level shifted 5V→3.3V |
 | temp sensor    | left        | GND                     | Shared             | GND             |                     |                  |             |              |                     |
 | temp sensor    | middle      | VCC                     | Shared             | 3.3v            |                     |                  |             |              |                     |
 | temp sensor    | right       | Data                    | Pi                 | 6               |                     |                  |             |              | DHT11 (single-wire, 4.7k pullup) |
