@@ -207,7 +207,7 @@ These are requirements for how the final circuit board needs to act.
 
 ### Audio Signals
 - **Line 1/2 (Balanced)**: Direct connection to Controller DB-9 (no transformer, controller has internal adjustment)
-- **Aux TX/PL/RX Audio**: AC-coupled voltage dividers with optional potentiometers for Pi level adjustment
+- **Aux TX/PL/RX Audio**: AC-coupled voltage dividers **with potentiometers** for Pi level adjustment (3 channels: TX, PL, RX)
 - **Pi USB Sound Interface**: 3.5mm TRRS direct connection (standard headset levels)
 
 ## Connector Requirements
@@ -243,7 +243,7 @@ These are requirements for how the final circuit board needs to act.
 - **Size**: No specific size constraints
 - **Layers**: 2-4 layer (4 preferred for audio ground planes)
 - **Audio Traces**: Controlled impedance for balanced lines, keep audio traces away from digital
-- **Ground**: Single shared ground plane (Quantar GND = Pi GND = Controller GND) - *may consider separate audio/digital ground planes later*
+- **Ground**: Single shared ground plane (Quantar GND = Pi GND = Controller GND)
 - **Power**: Separate power planes/regions for Quantar 5V, Pi 5V, Pi 3.3V
 - **Mounting**: 4× M3 mounting holes (one in each corner)
 - **Test Points**: 

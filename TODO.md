@@ -1,2 +1,0 @@
-- decide if Pi needs potentiometer for RX/TX audio gain/attenuation (controller has internal adjustment)
-- decide later if we need separate audio and digital ground planes
