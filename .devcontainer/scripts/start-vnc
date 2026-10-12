@@ -3,6 +3,9 @@
 
 set -e
 
+# Source Nix profile to get packages in PATH
+source /nix/var/nix/profiles/default/etc/profile.d/nix.sh
+
 VNC_DISPLAY=":1"
 VNC_PORT=5900
 NOVNC_PORT=6080
@@ -14,25 +17,43 @@ echo "Starting VNC server on display $VNC_DISPLAY..."
 
 # Create VNC password file
 mkdir -p ~/.vnc
+# Use vncpasswd properly - write password to stdin
 echo "$VNC_PASSWORD" | vncpasswd -f > ~/.vnc/passwd
 chmod 600 ~/.vnc/passwd
 
-# Start VNC server (TigerVNC)
-vncserver $VNC_DISPLAY \
+# Create xstartup script for TigerVNC
+cat > ~/.vnc/xstartup << 'EOF'
+#!/bin/sh
+export XKL_XMODMAP_DISABLE=1
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+exec openbox-session
+EOF
+chmod +x ~/.vnc/xstartup
+
+# Start VNC server (TigerVNC) - use Xvnc directly to avoid wrapper issues
+Xvnc $VNC_DISPLAY \
   -geometry $RESOLUTION \
   -depth $DEPTH \
   -localhost no \
   -SecurityTypes VncAuth \
   -rfbport $VNC_PORT \
   -rfbauth ~/.vnc/passwd \
-  -xstartup /usr/bin/openbox-session
+  -fp /nix/store/*/lib/X11/fonts/misc/ \
+  &
+
+VNC_PID=$!
 
 # Wait for VNC server to be ready
-sleep 2
+sleep 3
 
 # Start noVNC (websockify + noVNC web client)
 echo "Starting noVNC on port $NOVNC_PORT..."
-websockify --web /usr/share/novnc/ $NOVNC_PORT localhost:$VNC_PORT &
+NOVNC_WEB=$(find /nix/store -name "novnc" -type d -path "*/share/webapps/novnc" 2>/dev/null | head -1)
+if [ -z "$NOVNC_WEB" ]; then
+    NOVNC_WEB="/usr/share/novnc"
+fi
+websockify --web "$NOVNC_WEB/" $NOVNC_PORT localhost:$VNC_PORT &
 
 WEBSOCKIFY_PID=$!
 
@@ -48,7 +69,7 @@ echo ""
 echo "To run KiCad, open a terminal in the VNC session (right-click -> Terminal)"
 echo "Then run: kicad"
 echo ""
-echo "To stop: vncserver -kill $VNC_DISPLAY && kill $WEBSOCKIFY_PID"
+echo "To stop: kill $VNC_PID $WEBSOCKIFY_PID"
 
 # Keep script running to keep container alive
 wait $WEBSOCKIFY_PID

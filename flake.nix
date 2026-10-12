@@ -20,11 +20,15 @@
         name = "homelab-apps-devshell";
         paths = [
           pkgs.kicad
+
+          # webUI packages
           pkgs.tigervnc
           pkgs.novnc
-          pkgs.websockify
+          pkgs.python3Packages.websockify
           pkgs.openbox
           pkgs.xterm
+          pkgs.xinit
+          pkgs.xauth
           pkgs.mesa
           pkgs.glib
           pkgs.gtk3
