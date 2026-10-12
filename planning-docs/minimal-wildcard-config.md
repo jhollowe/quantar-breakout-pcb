@@ -15,7 +15,7 @@ Based on the connections.md pin mapping and requirements.md, the following signa
 | Input 6          | In 5 (Aux In 5)         | 15          | Aux In 5     | Input → Quantar  | **TX Inhibit** (already configured)     |
 | Input 7          | In 6 (Aux In 6)         | 16          | Aux In 6     | Input → Quantar  | Available for Pi status input           |
 | Input 14         | Ctrlr PL Out (Aux In 7) | 17          | Aux In 7     | Input → Quantar  | **PL Enable** (already configured)      |
-| Input 13         | PTT (Aux In 9)          | 47          | Aux In 9 -   | Input → Quantar  | **PTT** (already configured)            |
+| Input 13         | PTT (Aux In 9)          | 47/22       | Aux In 9 -/+ | Input → Quantar  | **PTT** (already configured, opto-coupled differential) |
 | Input 8          | Out 1 (Aux Out 1)       | 36          | Aux Out 1    | Output ← Quantar | **Station Alarm** (already configured)  |
 | Input 9          | Out 2 (Aux Out 2)       | 37          | Aux Out 2    | Output ← Quantar | Available for Pi monitoring             |
 | Input 16         | Ctrlr PL In (Aux Out 3) | 38          | Aux Out 3    | Output ← Quantar | **PL Detect** (already configured)      |
@@ -24,6 +24,8 @@ Based on the connections.md pin mapping and requirements.md, the following signa
 | Input 12         | TX Audio                | 5           | Aux TX Audio | Input → Quantar  | **Aux TX Audio Enable** (needs config)  |
 | Input 17         | Ctrlr TX Audio          | 1           | Line 1 +     | Input → Quantar  | Line 1 (balanced, no wildcard)          |
 | Input 18         | Ctrlr RX Audio          | 2           | Line 2 +     | Output ← Quantar | Line 2 (balanced, no wildcard)          |
+| Input 21         | PTT Monitor             | 47          | Aux In 9 -   | Output ← Quantar | Monitor (passive tap, no wildcard)      |
+| Input 22         | PL Enable Monitor       | 17          | Aux In 7     | Output ← Quantar | Monitor (passive tap, no wildcard)      |
 
 ## Minimal Wildcard Tables Required
 
@@ -84,7 +86,7 @@ Based on the connections.md pin mapping and requirements.md, the following signa
 - **State**: INPUT 9
 - **Action**: KEY FROM WL
 - **Inaction**: DEKEY FROM WL
-- **Purpose**: Controller/Pi asserts PTT via Aux In 9 (Pins 22/47)
+- **Purpose**: Controller/Pi asserts PTT via Aux In 9 (Pins 22/47, opto-coupled differential)
 
 ### Table 11: OUT1 - STN ALRM (KEEP EXISTING)
 - **State**: STN ALARM OR TX INHIBITED

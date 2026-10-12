@@ -2,14 +2,15 @@
 These are requirements for how the final circuit board needs to act.
 
 ## General Information
-- This PCB is an adapter/breakout for connecting a Quantar to a Raspberry Pi and a generic radio repeater controller
-  - It also has connections for a normally-open door sensor and a DHT12 temperature sensor which are both connected to the Pi.
+- This PCB is an adapter/breakout for connecting a Quantar to a Raspberry Pi and an **Arcom RC210** repeater controller
+  - It also has connections for a normally-open door sensor and a **DHT11** temperature/humidity sensor which are both connected to the Pi.
 - The Raspberry Pi is not the normal repeater controller. It exists for monitoring, but may occasionally be used for transmitting announcements.
 - The Quantar is amateur radio hardware which receives input (RX)
   - If the input is at a level above squelch, the COS line is triggered
   - If there is a valid PL tone in the input, the PL line is triggered
 - The Quantar has configurable inputs and outputs. View `quantar_configuration/Wildcard Config.html` for details of the current configuration.
   - Documentation on the wildcard functionality can be found in `quantar_configuration/[Reference]Wildcard Commands.html` and `quantar_configuration/[Reference]Wildcard States.html`
+- **Controller Reference**: Arcom RC210 hardware manual in `controller_docs/rc2104_1hardware.pdf`
 
 ## Quantar Station Details
 - **Model**: Motorola Quantar/Quantro
@@ -124,29 +125,34 @@ These are requirements for how the final circuit board needs to act.
 - **Ground**: Shared GND between Quantar and Pi (only common connection)
 - **Power Architecture**: Independent supplies, shared GND only
 
-## Controller Details
-- **Type**: Generic repeater controller
-- **Connector**: Female DB-9 (we can use male-male or male-female cables, so PCB can use either gender)
+## Controller Details (Arcom RC210)
+- **Type**: Arcom RC210 repeater controller
+- **Connector**: Female DB-9 (radio port) — PCB uses **male DB-9**
 - **Logic**: 
   - If COS and PL In are asserted, routes RX audio to TX audio and asserts PTT
   - Occasionally asserts PTT and plays recorded station identification audio
   - Does not know about or use RX Inhibit; will assert PTT even if Pi is asserting TX Inhibit
+- **Logic Inputs**: High impedance (>10K ohms), accepts 5-15V (logic high) or <0.6V (logic low)
+- **Logic Outputs**: 30V @ 100mA open-drain JFET
+- **Audio Inputs**: High impedance >10K, ~100mV p-p for auxiliary inputs
+- **Audio Outputs**: Up to 6V p-p
+- **COS/CTCSS Polarity**: Selectable via jumpers (JP1-JP6) for Active High or Active Low
 
-### Controller DB-9 Pinout
-| DB-9 Pin | Signal             | Direction              | Notes                  |
-| -------- | ------------------ | ---------------------- | ---------------------- |
-| 1        | CTCSS Out (PL Out) | Output from controller | To Quantar PL enable   |
-| 2        | CTCSS In (PL In)   | Input to controller    | From Quantar PL detect |
-| 3        | PTT Out            | Output from controller | To Quantar PTT         |
-| 4        | TX Audio Out       | Output from controller | To Quantar TX audio    |
-| 5        | RX Audio In        | Input to controller    | From Quantar RX audio  |
-| 6        | GND                | Ground                 | Shared                 |
-| 7        | COS In             | Input to controller    | From Quantar COS       |
-| 8        | GND                | Ground                 | Shared                 |
-| 9        | GND                | Ground                 | Shared                 |
+### Controller DB-9 Pinout (Radio Port)
+| DB-9 Pin | RJ-45 Pin | Direction | Signal | Notes |
+| -------- | --------- | --------- | ------ | ----- |
+| 1 | 1 | **Out** (Controller → Radio) | CTCSS Encode Control | To Quantar PL Enable (Aux In 7) |
+| 2 | 2 | **In** (Radio → Controller) | CTCSS Decoder Logic | From Quantar PL Detect (Aux Out 3) |
+| 3 | 3 | **Out** (Controller → Radio) | TX PTT | To Quantar PTT (Aux In 9) |
+| 4 | 4 | **Out** (Controller → Radio) | TX Audio | To Quantar Aux TX Audio (Pin 5) / Line 1 |
+| 5 | 5 | **In** (Radio → Controller) | RX Audio | From Quantar Aux RX Audio (Pin 30) / Line 2 |
+| 6 | 6 | — | Ground | Shared |
+| 7 | 7 | **In** (Radio → Controller) | RX COS Logic | From Quantar COS (Aux Out 7) |
+| 8 | 8 | — | Ground | Shared |
+| 9 | — | — | Ground | Shared |
 
 ## Raspberry Pi Details
-- **Model**: Raspberry Pi (3.3V GPIO logic)
+- **Model**: Raspberry Pi 4 (3.3V GPIO logic)
 - **Power**: Independent 5V supply (separate from Quantar)
 - **GPIO Connections** (from connections.md):
   - GPIO 17 (Pin 11): Quantar In 1 (Aux In 1)
@@ -157,34 +163,39 @@ These are requirements for how the final circuit board needs to act.
   - GPIO 25 (Pin 22): Quantar In 6 (Aux In 6)
   - GPIO 10 (Pin 19): Quantar Out 1 (Aux Out 1)
   - GPIO 9 (Pin 21): Quantar Out 2 (Aux Out 2)
-  - GPIO 11 (Pin 23): PTT (shared with controller)
-  - GPIO 8 (Pin 24): Ctrlr PL Out (shared with controller)
-  - GPIO 7 (Pin 26): COS (shared with controller)
-  - GPIO 5 (Pin 29): Ctrlr PL In (shared with controller)
+  - GPIO 11 (Pin 23): PTT Output (Pi → Quantar, shared with controller)
+  - GPIO 8 (Pin 24): PL Enable Output (Pi → Quantar, shared with controller)
+  - GPIO 7 (Pin 26): COS Input (Quantar → Pi, shared with controller)
+  - GPIO 5 (Pin 29): PL Detect Input (Quantar → Pi, shared with controller)
+  - GPIO 4 (Pin 7): **PTT Monitor Input** (Quantar PTT line → Pi, 5V→3.3V level shifted)
+  - GPIO 12 (Pin 32): **PL Enable Monitor Input** (Quantar PL Enable line → Pi, 5V→3.3V level shifted)
   - GPIO 13 (Pin 33): Door sensor (with 2.2k pullup to 3.3V)
-  - GPIO 6 (Pin 31): DHT12 Data
+  - GPIO 6 (Pin 31): DHT11 Data (single-wire protocol)
 - **Functions**:
   - Can assert TX Inhibit if there is an issue and repeater needs to be disabled
   - Reads door sensor (normally-open, with 2.2k pullup to 3.3V)
-  - Reads DHT12 temperature/humidity sensor (3.3V VCC, GND, Data)
+  - Reads DHT11 temperature/humidity sensor (3.3V VCC, GND, Data)
   - Occasionally asserts PTT and sends TX audio for announcements
+  - **Monitors controller PTT and PL Enable activity** via dedicated GPIO inputs
 
 ## Signal Type Summary & Level Shifting Requirements
 
 | Signal                                    | Quantar Side                     | Pi/Controller Side              | Level Shifting Required                      | Solution                                                    |
 | ----------------------------------------- | -------------------------------- | ------------------------------- | -------------------------------------------- | ----------------------------------------------------------- |
-| **Transistor Inputs (In 1-6)**            | 5V logic (Aux In 1-6)            | 3.3V GPIO (Pi)                  | **YES** - 3.3V → 5V                          | 74LVC245 / 74AHCT245 (unidirectional buffer)                |
+| **Transistor Inputs (In 1-6)**            | 5V logic (Aux In 1-6)            | 3.3V GPIO (Pi)                  | **YES** - 3.3V → 5V                          | **74LVC8T245** (dual-supply, 8-ch, DIR pin)                 |
 | **Transistor Input (In 7 - PL Enable)**   | 5V logic (Aux In 7)              | 3.3V GPIO (Pi + Controller)     | **YES** - 3.3V → 5V (shared)                 | **2N7002 MOSFET** (open-drain, wired-OR with Controller)    |
-| **Opto-coupled Input (PTT/In 9)**         | Opto-isolated (5V, pins 22/47)   | 3.3V GPIO (Pi + Controller)     | **YES** - 3.3V → 5V (shared)                 | **2N7002 MOSFET** (open-drain, wired-OR with Controller)    |
-| **Transistor Outputs (Out 1-2)**          | 5V open collector (Aux Out 1-2)  | 3.3V GPIO (Pi)                  | **YES** - 5V → 3.3V                          | 74LVC245 / 74AVC245 (unidirectional buffer)                 |
+| **Opto-coupled Input (PTT/In 9)**         | Opto-isolated diff. (pins 22/47) | 3.3V GPIO (Pi + Controller)     | **YES** - Drive opto LED                     | **Opto-coupler driver** (see PTT Implementation below)      |
+| **Transistor Outputs (Out 1-2)**          | 5V open collector (Aux Out 1-2)  | 3.3V GPIO (Pi)                  | **YES** - 5V → 3.3V                          | **74LVC8T245** (dual-supply, 8-ch, DIR pin)                 |
 | **Transistor Output (Out 3 - PL Detect)** | 5V open collector (Aux Out 3)    | 3.3V GPIO (Pi + Controller)     | **YES** - 5V → 3.3V (shared)                 | **4.7kΩ pull-up to 3.3V** (passive, shared with Controller) |
 | **Relay Output (Out 7 / COS)**            | Relay contact (pins 18/43)       | 3.3V GPIO (Pi + Controller)     | **YES** - Relay → 3.3V (shared)              | **4.7kΩ pull-up to 3.3V** (passive, shared with Controller) |
 | **Line 1 Audio (Balanced)**               | 600Ω balanced, phone line levels | Controller (TX Audio)           | **NO** - Direct connection                   | Controller has internal adjustment                          |
-| **Aux TX Audio**                          | 470Ω unbalanced, ±4.1V           | Controller (TX Audio) / Pi      | **YES** - Level adjust, AC couple            | Voltage divider / potentiometer for Pi                      |
-| **Aux PL Audio**                          | 470Ω unbalanced, ±4.1V           | Controller (CTCSS Out)          | **YES** - Level adjust, AC couple            | Voltage divider / potentiometer for Pi                      |
-| **Aux RX Audio**                          | <5Ω unbalanced, 0-6.6Vpp         | Controller (RX Audio) / Pi      | **YES** - Attenuate to line level, AC couple | Voltage divider / potentiometer for Pi                      |
+| **Aux TX Audio**                          | 470Ω unbalanced, ±4.1V           | Controller (TX Audio) / Pi      | **YES** - Level adjust, AC couple            | Voltage divider + potentiometer for Pi                      |
+| **Aux PL Audio**                          | 470Ω unbalanced, ±4.1V           | Controller (CTCSS Out)          | **YES** - Level adjust, AC couple            | Voltage divider + potentiometer for Pi                      |
+| **Aux RX Audio**                          | <5Ω unbalanced, 0-6.6Vpp         | Controller (RX Audio) / Pi      | **YES** - Attenuate to line level, AC couple | Voltage divider + potentiometer for Pi                      |
 | **Door Sensor**                           | N.O. contact                     | 3.3V GPIO (Pi) with 2.2k pullup | **NO** - Direct (already 3.3V)               | Direct                                                      |
-| **DHT12 Sensor**                          | 3.3V I2C                         | 3.3V GPIO (Pi)                  | **NO** - Direct (already 3.3V)               | Direct                                                      |
+| **DHT11 Sensor**                          | 3.3V single-wire                 | 3.3V GPIO (Pi)                  | **NO** - Direct (already 3.3V)               | Direct (with 4.7kΩ pull-up on data line)                    |
+| **PTT Monitor**                           | Opto-coupled (Pin 47)            | 3.3V GPIO (Pi)                  | **YES** - 5V → 3.3V                          | **74LVC8T245** (spare channel, 5V→3.3V) — **passive tap, no wildcard change** |
+| **PL Enable Monitor**                     | Transistor-buffered (Pin 17)     | 3.3V GPIO (Pi)                  | **YES** - 5V → 3.3V                          | **74LVC8T245** (spare channel, 5V→3.3V) — **passive tap, no wildcard change** |
 
 ## Level Shifting Strategy (DECIDED)
 
@@ -193,21 +204,46 @@ These are requirements for how the final circuit board needs to act.
 
 | Channel Group                 | Count | Direction             | Solution                               | Components                                           |
 | ----------------------------- | ----- | --------------------- | -------------------------------------- | ---------------------------------------------------- |
-| Pi → Quantar (Aux In 1-6)     | 6     | 3.3V → 5V             | Unidirectional buffer                  | 1× 74LVC245 / 74AHCT245 (8-ch, OE pin)               |
-| Pi → Quantar (PTT, PL Enable) | 2     | 3.3V → 5V (shared)    | **Discrete 2N7002 MOSFETs** (wired-OR) | 2× 2N7002 (SOT-23) + Quantar's internal 10kΩ pull-up |
-| Quantar → Pi (Aux Out 1-2)    | 2     | 5V → 3.3V             | Unidirectional buffer                  | 1× 74LVC245 / 74AVC245 (8-ch, OE pin)                |
+| Pi → Quantar (Aux In 1-6)     | 6     | 3.3V → 5V             | **Dual-supply unidirectional buffer**  | **1× 74LVC8T245** (8-ch, DIR pin, VCCA=3.3V, VCCB=5V) |
+| Pi → Quantar (PL Enable)      | 1     | 3.3V → 5V (shared)    | **Discrete 2N7002 MOSFET** (wired-OR)  | 1× 2N7002 (SOT-23) + Quantar's internal 10kΩ pull-up |
+| Pi → Quantar (PTT)            | 1     | 3.3V → Opto LED       | **Opto-coupler driver circuit**        | See PTT Implementation below                         |
+| Quantar → Pi (Aux Out 1-2)    | 2     | 5V → 3.3V             | **Dual-supply unidirectional buffer**  | **1× 74LVC8T245** (8-ch, DIR pin, VCCA=3.3V, VCCB=5V) |
 | Quantar → Pi (PL Detect, COS) | 2     | 5V OC → 3.3V (shared) | **Passive pull-up to 3.3V**            | 4× 4.7kΩ resistors (2 per line for Pi + Controller)  |
+| Quantar → Pi (PTT Monitor)    | 1     | 5V → 3.3V             | **Dual-supply unidirectional buffer**  | Spare channel on 2nd 74LVC8T245 — **passive tap**    |
+| Quantar → Pi (PL Enable Mon)  | 1     | 5V → 3.3V             | **Dual-supply unidirectional buffer**  | Spare channel on 2nd 74LVC8T245 — **passive tap**    |
+
+### PTT Implementation (Quantar Aux In 9 - Opto-Coupled Differential)
+**Quantar PTT (Pins 22/47) is an opto-isolated differential input**, not a transistor-buffered input:
+- **Pin 22 (Aux In 9 +)**: Anode of optocoupler LED via 7.8kΩ (3.9kΩ + 3.9kΩ) to +5V
+- **Pin 47 (Aux In 9 -)**: Cathode of optocoupler LED
+- **To assert PTT**: Drive current through LED (Pin 22 → LED → Pin 47 → GND)
+- **Controller drives this differentially** (connects to both Pin 22 and Pin 47)
+
+**PCB Implementation Options:**
+1. **Option A (Recommended)**: Use a small signal transistor (2N3904) or MOSFET to drive the optocoupler differentially
+   - Pi GPIO → base resistor → 2N3904 collector to Pin 47, emitter to GND
+   - Pin 22 connected to +5V (from Quantar Pin 8 or Pi 5V via diode)
+   - Controller cable connects to both Pin 22 and Pin 47
+2. **Option B**: Buffer the Controller's PTT output and OR with Pi's PTT using diodes
+   - Both Pi and Controller drive the optocoupler cathode (Pin 47) via diodes
+   - Pin 22 tied to +5V
+
+**Selected**: Option A — Pi drives a 2N3904/2N7002 to pull Pin 47 LOW while Pin 22 is held at +5V. Controller cable provides its own differential drive.
 
 ### Key Design Decisions
 1. **No TXS0108E/TXB0108** - Bidirectional auto-direction sensing conflicts with controller driving shared lines
-2. **2N7002 MOSFETs for shared inputs** - Allow both Pi and Controller to pull Quantar inputs LOW independently (wired-OR), Quantar's internal 10kΩ pull-up provides HIGH
-3. **Passive pull-ups for shared outputs** - Quantar outputs are open-collector; 4.7kΩ to 3.3V lets both Pi and Controller read safely
-4. **74LVC245 for Pi-only lines** - Simple, cheap, 8 channels per IC, OE pin for enable/disable
-5. **Level shifters powered from Pi's 5V** (VCCA=3.3V from Pi, VCCB=5V from Pi)
+2. **74LVC8T245 for all Pi↔Quantar level shifting** - Dual-supply (VCCA=3.3V, VCCB=5V), 8 channels, DIR pin controls direction. Use **2× 74LVC8T245** (one for Pi→Quantar, one for Quantar→Pi)
+3. **2N7002 MOSFET for PL Enable (shared input)** - Allows both Pi and Controller to pull Quantar Aux In 7 LOW independently (wired-OR), Quantar's internal 10kΩ pull-up provides HIGH
+4. **PTT uses opto-coupler driver** - Quantar PTT is opto-isolated differential; Pi drives cathode via transistor, Pin 22 held at +5V
+5. **Passive pull-ups for shared outputs** - Quantar outputs are open-collector; 4.7kΩ to 3.3V lets both Pi and Controller read safely
+6. **Level shifters powered from Pi's 5V** (VCCA=3.3V from Pi 3.3V rail, VCCB=5V from Pi 5V rail)
 
 ### Audio Signals
 - **Line 1/2 (Balanced)**: Direct connection to Controller DB-9 (no transformer, controller has internal adjustment)
 - **Aux TX/PL/RX Audio**: AC-coupled voltage dividers **with potentiometers** for Pi level adjustment (3 channels: TX, PL, RX)
+  - Series coupling capacitors (10µF electrolytic + 0.1µF ceramic)
+  - Voltage divider: Quantar ±4.1V → Pi ~1V (adjustable via 10kΩ potentiometer)
+  - Series resistor (1kΩ) on Pi output to prevent back-driving controller
 - **Pi USB Sound Interface**: 3.5mm TRRS direct connection (standard headset levels)
 
 ## Connector Requirements
@@ -230,7 +266,7 @@ These are requirements for how the final circuit board needs to act.
 
 ### Sensors
 - **Door Sensor**: 2-pin 0.1" header (GND + Signal with pullup)
-- **DHT12**: 3-pin 0.1" header (GND, 3.3V, Data)
+- **DHT11**: 3-pin 0.1" header (GND, 3.3V, Data) — single-wire protocol, 4.7kΩ pull-up on data line
 
 ### Audio Monitoring (Pi USB Sound Interface)
 - **Connector**: 3.5mm TRRS jack (standard headset pinout)
@@ -254,7 +290,7 @@ These are requirements for how the final circuit board needs to act.
   - TX Audio
 - **Indicators**: LEDs for PTT, COS, PL (with current-limiting resistors)
 - **Silkscreen**: Generic labels initially, detailed labels can be added later
-- **ESD Protection**: Not required (all connections well-grounded)
+- **ESD Protection**: TVS diodes on all external connectors (DB-9, Quantar header, sensor headers, TRRS jack)
 - **Fuse/PTC**: Not required for now
 
 ## Wildcard Reprogramming Notes
@@ -290,7 +326,7 @@ See `planning-docs/minimal-wildcard-config.md` for complete table definitions.
 | Input        | 10          | 5V                           | Shared                  | 5V              | 8           | 5V DC Out     | green/red     |
 | Input        | 11          | RX Audio                     | Controller DB9          | 5               | 30          | Aux RX Audio  | white/slate   |
 | Input        | 12          | TX Audio                     | Controller DB9          | 4               | 5           | Aux TX Audio  | slate/white   |
-| Input        | 13          | PTT                          | Controller DB9:3, Pi:11 | 47              | Aux In 9 -  | violet/orange |               |
+| Input        | 13          | PTT                          | Controller DB9:3, Pi:11 | 47/22           | Aux In 9 -/+ | violet/orange |               |
 | Input        | 14          | Ctrlr PL Out                 | Controller DB9:1, Pi:8  | 17              | Aux In 7    | orange/yellow |               |
 | Input        | 15          | COS                          | Controller DB9:7, Pi:7  | 43              | Aux Out 7 - | yellow/green  |               |
 | Input        | 16          | Ctrlr PL In                  | Controller DB9:2, Pi:5  | 38              | Aux Out 3   | black/green   |               |
@@ -302,7 +338,7 @@ See `planning-docs/minimal-wildcard-config.md` for complete table definitions.
 | Door Sensor  | Bottom      | Signal (2.2k pullup to 3.3V) | Pi                      | 13              |             |               |               |
 | Temp Sensor  | Left        | GND                          | Shared                  | GND             |             |               |               |
 | Temp Sensor  | Middle      | VCC (3.3V)                   | Shared                  | 3.3V            |             |               |               |
-| Temp Sensor  | Right       | Data                         | Pi                      | 6               |             |               |               |
+| Temp Sensor  | Right       | Data                         | Pi                      | 6               |             |               | DHT11         |
 
 ## Design Deliverables
 1. **Schematic** (KiCad): Complete with all connectors, level shifters, audio circuits, sensor interfaces

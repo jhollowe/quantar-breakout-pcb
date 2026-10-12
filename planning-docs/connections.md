@@ -12,7 +12,7 @@
 | Input          | 10          | 5v                      | Shared             | 5v              |                     |                  | 8           | 5v DC Out    | green/red           |
 | Input          | 11          | RX Audio                | Controller DB9     | 5               |                     |                  | 30          | Aux RX Audio | white/slate         |
 | Input          | 12          | TX Audio                | Controller DB9     | 4               |                     |                  | 5           | Aux TX Audio | slate/white         |
-| Input          | 13          | PTT                     | Controller DB9     | 3               | Pi                  | 11               | 47          | Aux In 9 -   | voilet/orange       |
+| Input          | 13          | PTT                     | Controller DB9     | 3               | Pi                  | 11               | 47/22       | Aux In 9 -/+ | voilet/orange       |
 | Input          | 14          | Ctrlr PL Out            | Controller DB9     | 1               | Pi                  | 8                | 17          | Aux In 7     | orange/yellow       |
 | Input          | 15          | COS                     | Controller DB9     | 7               | Pi                  | 7                | 43          | Aux Out 7 -  | yellow/green        |
 | Input          | 16          | Ctrlr PL In             | Controller DB9     | 2               | Pi                  | 5                | 38          | Aux Out 3    | black/green         |
@@ -20,11 +20,13 @@
 | Input          | 18          | Ctrlr RX Audio          | Controller DB9     | 5               |                     |                  | 2           | Line 2 +     | orange/white        |
 | Input          | 19          | 5v                      |                    |                 |                     |                  | 18          | Aux Out 7 +  | green/yellow        |
 | Input          | 20          | 5v                      |                    |                 |                     |                  | 22          | Aux In 9 +   | orange/violet       |
+| Input          | 21          | PTT Monitor             | Pi                 | 7               |                     |                  | 47          | Aux In 9 -   | (monitor tap)       |
+| Input          | 22          | PL Enable Monitor       | Pi                 | 32              |                     |                  | 17          | Aux In 7     | (monitor tap)       |
 | door sensor    | top         | GND                     | Shared             | GND             |                     |                  |             |              |                     |
 | door sensor    | bottom      | has 2.2k pullup to 3.3v | Pi                 | 13              |                     |                  |             |              |                     |
 | temp sensor    | left        | GND                     | Shared             | GND             |                     |                  |             |              |                     |
 | temp sensor    | middle      | VCC                     | Shared             | 3.3v            |                     |                  |             |              |                     |
-| temp sensor    | right       | Data                    | Pi                 | 6               |                     |                  |             |              |                     |
+| temp sensor    | right       | Data                    | Pi                 | 6               |                     |                  |             |              | DHT11 (single-wire, 4.7k pullup) |
 | Controller DB9 | 1           | CTCSS Out               |                    |                 |                     |                  |             |              |                     |
 | Controller DB9 | 2           | CTCSS In                |                    |                 |                     |                  |             |              |                     |
 | Controller DB9 | 3           | PTT Out                 |                    |                 |                     |                  |             |              |                     |
