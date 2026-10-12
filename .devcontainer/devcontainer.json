@@ -41,7 +41,7 @@
 	// The first time the dev container runs, install the flake's packages
 	"postCreateCommand": "nix profile add .",
 	// Start VNC server on container start
-	"postStartCommand": "start-vnc",
+	// "postStartCommand": "start-vnc",
 	// Add scripts to PATH
 	"remoteEnv": {
 		"PATH": "${containerEnv:PATH}:/workspaces/quantar-breakout-pcb/.devcontainer/scripts"

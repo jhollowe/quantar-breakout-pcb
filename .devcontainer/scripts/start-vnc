@@ -13,6 +13,31 @@ VNC_PASSWORD="kicad123"
 RESOLUTION="1920x1080"
 DEPTH="24"
 
+# Track child PIDs for cleanup
+VNC_PID=""
+WEBSOCKIFY_PID=""
+
+# Cleanup function
+cleanup() {
+    echo ""
+    echo "Shutting down..."
+    if [ -n "$WEBSOCKIFY_PID" ] && kill -0 "$WEBSOCKIFY_PID" 2>/dev/null; then
+        kill "$WEBSOCKIFY_PID" 2>/dev/null
+        wait "$WEBSOCKIFY_PID" 2>/dev/null
+    fi
+    if [ -n "$VNC_PID" ] && kill -0 "$VNC_PID" 2>/dev/null; then
+        kill "$VNC_PID" 2>/dev/null
+        wait "$VNC_PID" 2>/dev/null
+    fi
+    # Also kill any remaining Xvnc processes on our display
+    pkill -f "Xvnc $VNC_DISPLAY" 2>/dev/null
+    echo "Cleanup complete."
+    exit 0
+}
+
+# Trap signals
+trap cleanup SIGTERM SIGINT SIGQUIT EXIT
+
 echo "Starting VNC server on display $VNC_DISPLAY..."
 
 # Create VNC password file
@@ -69,7 +94,7 @@ echo ""
 echo "To run KiCad, open a terminal in the VNC session (right-click -> Terminal)"
 echo "Then run: kicad"
 echo ""
-echo "To stop: kill $VNC_PID $WEBSOCKIFY_PID"
+echo "Press Ctrl+C to stop all services"
 
 # Keep script running to keep container alive
 wait $WEBSOCKIFY_PID

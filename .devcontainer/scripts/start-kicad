@@ -1,0 +1,7 @@
+#!/bin/bash
+# Start KiCad in the VNC session
+
+# Source Nix profile to get packages in PATH
+source /nix/var/nix/profiles/default/etc/profile.d/nix.sh
+
+DISPLAY=:1 kicad
